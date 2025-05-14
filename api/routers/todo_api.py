@@ -68,7 +68,7 @@ def get_todo(todo_id: UUID) -> TodoItem:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Todo not found"
         )
-    return todo
+    return todo[0]
 
 
 @todos_router.put("/update/{todo_id}", response_model=TodoItem)
