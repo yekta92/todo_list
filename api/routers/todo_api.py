@@ -95,9 +95,9 @@ def update_todo(
 
 
 @todos_router.delete("/delete/{todo_id}")
-def delete_todo(id: UUID):
-    if id not in todos:
-        raise HTTPException(status_code=404, detail="Todo item not found")
+def delete_todo(id: UUID) -> dict:
 
-    del todos[id]
-    return {"message": "Todo item deleted successfully"}
+    todo = [todo for todo  in todos if todo.id == id][0]
+    del todo
+
+    return  {"message": "Todo item deleted successfully"}
