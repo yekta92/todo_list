@@ -73,26 +73,31 @@ def get_todo(todo_id: UUID) -> TodoItem:
 
 @todos_router.put("/update/{todo_id}", response_model=TodoItem)
 def update_todo(
-    id: Optional[UUID] = None,
     todo_update: TodoItem = ...,
 ) -> TodoItem:
 
-    if id not in todos:
-        raise HTTPException(status_code=404, detail="Todo item not found")
+    todo = [todo for todo in todos if todo.id == todo_update.id]
+    if not todo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Todo not found"
+        )
 
-    todo = todos[id]
-
-    update_data = todo_update.dict(exclude_unset=True)
-
-    dict(todo).update(update_data)
+    todo = TodoItem(
+        id= todo_update.id,
+        title=todo_update.title,
+        description=todo_update.description,
+        completed=todo_update.completed,
+        created_at=todo_update.created_at,
+    )
 
     return todo
 
 
-# @todos_router.delete("/de/{todo_id}")
-# async def delete_todo(id: UUID):
-#     if id not in todos:
-#         raise HTTPException(status_code=404, detail="Todo item not found")
 
-#     del todos[id]
-#     return {"message": "Todo item deleted successfully"}
+@todos_router.delete("/delete/{todo_id}")
+def delete_todo(id: UUID):
+    if id not in todos:
+        raise HTTPException(status_code=404, detail="Todo item not found")
+
+    del todos[id]
+    return {"message": "Todo item deleted successfully"}

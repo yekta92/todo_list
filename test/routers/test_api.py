@@ -1,7 +1,7 @@
 from uuid import UUID
 import datetime
 from test.models.test_model import TodoItem
-from api.routers.todo_api import create_todos, get_todos, get_todo, update_todo
+from api.routers.todo_api import create_todos, get_todos, get_todo, update_todo ,delete_todo
 
 
 def test_create_todos():
@@ -45,20 +45,11 @@ def test_get_todo():
 
 def test_update_todo():
     response = update_todo(
-    id=UUID(int=0x12345678123456781234567812345678),
+    todo_update = TodoItem(id=UUID(int=0x12345678123456781234567812345678),
     title = 'this is my task',
-    description = 'important',
-    completed = True,
-    created_at=datetime.datetime.now()
+    completed = True,)
+
 )
+    assert isinstance(response.id, UUID)
+    assert isinstance(response.completed, bool)
 
-    assert isinstance(response[0].id, UUID)
-    assert isinstance(response[0].completed, bool)
-    assert all(todo.completed in [True, False] for todo in response)
-
-    assert all(hasattr(todo, "title") for todo in response)
-    assert all(isinstance(todo.title, str) for todo in response)
-    assert all(len(todo.title) > 0 for todo in response)
-
-    ids = [todo.id for todo in response]
-    assert len(ids) == len(set(ids))
