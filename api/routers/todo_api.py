@@ -1,6 +1,6 @@
 # app/routers.py
 from typing import Optional, List
-from datetime import datetime
+import datetime
 from uuid import UUID, uuid4
 from fastapi import HTTPException, status, APIRouter
 
@@ -13,9 +13,10 @@ todos_router = APIRouter()
 todos = [
     TodoItem(
         id=UUID(int=0x12345678123456781234567812345678),
-        tittle="Buy milk",
+        title="Buy milk",
         description="Get whole milk",
         completed=False,
+        created_at=datetime.datetime.now()
     )
 ]
 
@@ -23,12 +24,12 @@ todos = [
 @todos_router.post("/create", response_model=TodoItem)
 def create_todos(
     id: Optional[UUID] = None,
-    tittle: str = None,
+    title: str = None,
     description: Optional[str] = None,
     completed: bool = False,
     created_at = None,
 ) -> TodoItem:
-    if not tittle:
+    if not title:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="Title must be provided and non-empty",
@@ -41,11 +42,11 @@ def create_todos(
         id = uuid4()
 
     if created_at is None:
-        created_at = datetime.now()
+        created_at = datetime.datetime.now()
 
     todo = TodoItem(
         id=id,
-        tittle=tittle,
+        title=title,
         description=description,
         completed=completed,
         created_at=created_at,
