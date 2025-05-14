@@ -1,11 +1,11 @@
-from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
 from uuid import UUID, uuid4
+from sqlmodel import SQLModel, Field
 
 
-class TodoItem(BaseModel):
-    id: UUID = Field(default_factory=uuid4)
+class TodoItem(SQLModel, table=True):
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
     title: str = Field(..., description="Title of the Todo item")
     description: Optional[str] = Field(
         None, description="Optional description of the Todo item"

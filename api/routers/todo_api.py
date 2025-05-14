@@ -2,23 +2,21 @@
 from typing import Optional, List
 import datetime
 from uuid import UUID, uuid4
-from fastapi import HTTPException, status, APIRouter
-
+from fastapi import HTTPException, status, APIRouter, Depends
+from utils.database import get_session
 from api.models.todo_model import TodoItem
-
+from sqlmodel import Field, Session, SQLModel, create_engine, select
 
 
 todos_router = APIRouter()
 
-todos = [
-    TodoItem(
-        id=UUID(int=0x12345678123456781234567812345678),
-        title="Buy milk",
-        description="Get whole milk",
-        completed=False,
-        created_at=datetime.datetime.now()
-    )
-]
+todos = TodoItem(
+    id=UUID(int=0x12345678123456781234567812345678),
+    title="Title of the Todo item",
+    description="Optional description of the Todo item",
+    completed=False,
+    created_at=datetime.now(),
+)
 
 
 @todos_router.post("/create", response_model=TodoItem)
@@ -27,7 +25,7 @@ def create_todos(
     title: str = None,
     description: Optional[str] = None,
     completed: bool = False,
-    created_at = None,
+    created_at=None,
 ) -> TodoItem:
     if not title:
         raise HTTPException(
@@ -56,7 +54,8 @@ def create_todos(
 
 
 @todos_router.get("/get_todos", response_model=List[TodoItem])
-def get_todos() -> List[TodoItem]:
+def get_todos(session: Session = Depends(get_session)) -> List[TodoItem]:
+    todos = session.exec(select(TodoItem)).all()
     return todos
 
 
@@ -71,7 +70,6 @@ def get_todo(todo_id: UUID) -> TodoItem:
     return todo[0]
 
 
-@todos_router.put("/update/{todo_id}", response_model=TodoItem)
 def update_todo(
     todo_update: TodoItem = ...,
 ) -> TodoItem:
@@ -83,7 +81,7 @@ def update_todo(
         )
 
     todo = TodoItem(
-        id= todo_update.id,
+        id=todo_update.id,
         title=todo_update.title,
         description=todo_update.description,
         completed=todo_update.completed,
@@ -93,11 +91,10 @@ def update_todo(
     return todo
 
 
-
 @todos_router.delete("/delete/{todo_id}")
 def delete_todo(id: UUID) -> dict:
 
-    todo = [todo for todo  in todos if todo.id == id][0]
+    todo = [todo for todo in todos if todo.id == id][0]
     del todo
 
-    return  {"message": "Todo item deleted successfully"}
+    return {"message": "Todo item deleted successfully"}
