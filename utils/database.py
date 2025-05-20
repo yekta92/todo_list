@@ -2,7 +2,10 @@
 SQL Database Configurations
 """
 
+from typing import Annotated
+
 from sqlmodel import Session, SQLModel, create_engine
+from fastapi import Depends
 
 
 # SQLite database URL and engine setup
@@ -21,3 +24,6 @@ def create_db_and_tables():
 def get_session():
     with Session(engine) as session:
         yield session
+
+
+SessionDep = Annotated[Session, Depends(get_session)]
