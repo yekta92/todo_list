@@ -6,13 +6,20 @@ from fastapi import HTTPException, status, APIRouter, Depends
 from utils.database import get_session, create_db_and_tables, SessionDep
 from api.models.todo_model import TodoItem
 from sqlmodel import Session, select
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
 
 todos_router = APIRouter()
 
 
-@todos_router.on_event("startup")
-def on_startup():
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup logic
     create_db_and_tables()
+    yield
+    # (Optional) Shutdown logic
 
 
 todos = TodoItem(
@@ -20,7 +27,7 @@ todos = TodoItem(
     title="Title of the Todo item",
     description="Optional description of the Todo item",
     completed=False,
-    created_at=datetime.now(),
+    created_at=datetime.datetime.now(),
 )
 
 
