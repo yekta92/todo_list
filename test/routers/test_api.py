@@ -11,12 +11,7 @@ sample_id = UUID(int=0x12345678123456781234567812345678)
 
 
 def test_create_todos():
-    response = client.create(f"/todos/{sample_id}",TodoItem(
-                                                        id=sample_id,
-                                                        title= "Test Todo",
-                                                        completed= False,
-                                                    )
-                                                )
+    response = client.post(TodoItem(id=sample_id,title= "Test Todo",completed= False,))
    
     assert response.title == "Test Todo"
     assert response.description == "Test description"
@@ -27,7 +22,7 @@ def test_create_todos():
 
 
 def test_get_todos():
-    response = client.get_todos(f"/todos/{sample_id}")
+    response = client.get(f"/create/{sample_id}")
 
     assert isinstance(response[0].id, UUID)
     assert isinstance(response[0].completed, bool)
@@ -37,7 +32,7 @@ def test_get_todos():
 
 
 def test_get_todo():
-    response = client.get_one_todo(f"/todos/{sample_id}")
+    response = client.get(f"/todos/{sample_id}")
     
     assert isinstance(response.id, UUID)
     assert isinstance(response.completed, bool)
@@ -46,7 +41,7 @@ def test_get_todo():
 
 
 def test_update_todo():
-    response = client.update(f"/todos/{sample_id}",TodoItem(
+    response = client.put(f"/todos/{sample_id}",TodoItem(
                                                         id=sample_id,
                                                         title= "this is my task",
                                                         completed= True
@@ -58,6 +53,6 @@ def test_update_todo():
 
 
 def test_delete_todo():
-    response = client.delete(f"/todos/{sample_id}")
+    response = client.post(f"/todos/{sample_id}")
 
     assert response == {"message": "Todo item deleted successfully"}

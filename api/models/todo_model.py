@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Annotated
 from datetime import datetime
 from uuid import UUID, uuid4
 from sqlmodel import SQLModel, Field
@@ -12,3 +12,7 @@ class TodoItem(SQLModel, table=True):
     )
     completed: bool = Field(default=False)
     created_at: datetime = Field(default_factory=datetime.now)
+    status: Annotated[str, Field(default="active")] = Field(
+        default="active",
+        description="Status of the Todo item, can be 'active', 'in_progress', or 'pending'",
+    )
