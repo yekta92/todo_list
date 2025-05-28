@@ -5,7 +5,8 @@ from sqlmodel import SQLModel, Field
 
 
 class TodoItem(SQLModel, table=True):
-    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    id: str= Field(default_factory=uuid4, primary_key=True)
+    # id: UUID = Field(default_factory=uuid4, primary_key=True)
     title: str = Field(..., description="Title of the Todo item")
     description: Optional[str] = Field(
         None, description="Optional description of the Todo item"

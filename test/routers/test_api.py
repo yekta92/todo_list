@@ -4,7 +4,6 @@ from test.models.test_model import TodoItem
 from fastapi.testclient import TestClient
 from main import app  
 
-
 client = TestClient(app)
 
 sample_id = UUID(int=0x12345678123456781234567812345678)
