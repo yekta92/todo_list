@@ -53,7 +53,7 @@ def create_todo(
         )
 
     todo = TodoItem(
-        id=uuid.uuid4(),
+        id=todoitem.id,
         title=todoitem.title,
         description=todoitem.description,
         completed=todoitem.completed,
@@ -74,7 +74,7 @@ def get_todos(session: Session = Depends(get_session)) -> List[TodoItem]:
 
 
 @todos_router.get("/get_one_todo/{todo_id}", response_model=TodoItem)
-def get_todo(todo_id: UUID, session: Annotated[Session, Depends(get_session)],) -> TodoItem:
+def get_todo(todo_id: str, session: Annotated[Session, Depends(get_session)],) -> TodoItem:
     todo = session.get(TodoItem, todo_id)
     if not todo:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="todo not found")
