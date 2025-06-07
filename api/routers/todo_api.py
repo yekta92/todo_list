@@ -8,6 +8,7 @@ from utils.database import get_session, create_db_and_tables
 from api.models.todo_model import TodoItem
 from sqlmodel import Session, select
 from contextlib import asynccontextmanager
+from utils.database import get_session, Base, engine 
 
 todos_router = APIRouter()
 
@@ -26,17 +27,19 @@ todos = TodoItem(
     id=UUID(int=0x12345678123456781234567812345678),
     title="Title of the Todo item",
     description="Optional description of the Todo item",
-    completed=False,
+    status="pending",
     created_at=datetime.datetime.now(),
+    updated_at = datetime.datetime.now(),
+
 )
 
 
 
-@todos_router.post("/create", response_model=TodoItem)
+@todos_router.post("/create", response_model=None)
 def create_todo(
     todoitem: TodoItem, 
     session: Annotated[Session, Depends(get_session)],
-) -> TodoItem:
+):
     if not todoitem.title or not todoitem.title.strip():
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,

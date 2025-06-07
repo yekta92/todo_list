@@ -2,27 +2,32 @@
 SQL Database Configurations
 """
 
-from typing import Annotated
+from sqlalchemy import create_engine
+from sqlalchemy.ext.declarative import declarative_base
+from sqlmodel import SQLModel, Field
+from sqlalchemy.orm import sessionmaker, Session
+from contextlib import contextmanager
 
-from sqlmodel import Session, SQLModel, create_engine
-from fastapi import Depends
+SQLALCHEMY_DATABASE_URL = "sqlite:///./todos.db"
 
+engine = create_engine(
+    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
+)
 
-# SQLite database URL and engine setup
-sqlite_file_name = "database.db"
-sqlite_url = f"sqlite:///{sqlite_file_name}"
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-engine = create_engine(sqlite_url)
+Base = declarative_base()
+
+# Dependency function for FastAPI to get DB session
+def get_session():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 
 # Create the database tables
 def create_db_and_tables():
-    SQLModel.metadata.create_all(engine)
-
-
-# Dependency to get DB session
-def get_session():
-    with Session(engine) as session:
-        yield session
-
+    SQLModel.metadata.create_all(bind=engine)
 

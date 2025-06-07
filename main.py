@@ -4,10 +4,6 @@ from utils.database import create_db_and_tables
 from contextlib import asynccontextmanager
 
 
-# app = FastAPI()
-
-
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
