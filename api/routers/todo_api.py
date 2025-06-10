@@ -1,14 +1,14 @@
 # app/routers.py
 from typing import List,Annotated
 import datetime
-import uuid
 from uuid import UUID
 from fastapi import HTTPException, status, APIRouter, Depends ,FastAPI
-from utils.database import get_session, create_db_and_tables
 from api.models.todo_model import TodoItem
 from sqlmodel import Session, select
 from contextlib import asynccontextmanager
-from utils.database import get_session, Base, engine 
+
+from ...utils.database import get_session, create_db_and_tables,get_session, Base, engine 
+
 
 todos_router = APIRouter()
 
