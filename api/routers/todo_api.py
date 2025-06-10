@@ -1,26 +1,15 @@
 # app/routers.py
-from typing import List,Annotated
 import datetime
+from typing import List
 from uuid import UUID
-from fastapi import HTTPException, status, APIRouter, Depends ,FastAPI
+from uuid import uuid4
+from fastapi import HTTPException, status, APIRouter, Depends 
 from api.models.todo_model import TodoItem
-from sqlmodel import Session, select
-from contextlib import asynccontextmanager
+from sqlmodel import Session,select
 
-from ...utils.database import get_session, create_db_and_tables,get_session, Base, engine 
-
+from ..utils.database import get_session
 
 todos_router = APIRouter()
-
-
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Startup logic
-    create_db_and_tables()
-    yield
-    # (Optional) Shutdown logic
 
 
 todos = TodoItem(
@@ -35,10 +24,40 @@ todos = TodoItem(
 
 
 
+@todos_router.post("/todos/create", response_model=TodoItem, status_code=status.HTTP_201_CREATED)
+def create_todo(
+    todoitem: TodoItem,
+    session: Session = Depends(get_session),
+):
+    # Validation
+    if not todoitem.title or not todoitem.title.strip():
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Title must be provided and non-empty",
+        )
+
+    if not isinstance(todoitem.completed, bool):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Completed must be a boolean",
+        )
+
+    todoitem.created_at = datetime.datetime.utcnow()
+    if not todoitem.id:
+        todoitem.id = uuid4()
+
+    session.add(todoitem)
+    session.commit()
+    session.refresh(todoitem)
+    return todoitem
+
+
+
+
 @todos_router.post("/create", response_model=None)
 def create_todo(
     todoitem: TodoItem, 
-    session: Annotated[Session, Depends(get_session)],
+    session: Session = Depends(get_session),
 ):
     if not todoitem.title or not todoitem.title.strip():
         raise HTTPException(
@@ -68,13 +87,15 @@ def create_todo(
 
 
 @todos_router.get("/get_todos", response_model=List[TodoItem])
-def get_todos(session: Session = Depends(get_session)) -> List[TodoItem]:
+def get_todos(session: Session = Depends(get_session),
+) -> List[TodoItem]:
     todos = session.exec(select(TodoItem)).all()
     return todos
 
 
 @todos_router.get("/get_one_todo/{todo_id}", response_model=TodoItem)
-def get_todo(todo_id: str, session: Annotated[Session, Depends(get_session)],) -> TodoItem:
+def get_todo(todo_id: str,session: Session = Depends(get_session)
+,) -> TodoItem:
     todo = session.get(TodoItem, todo_id)
     if not todo:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="todo not found")
@@ -82,7 +103,8 @@ def get_todo(todo_id: str, session: Annotated[Session, Depends(get_session)],) -
 
 
 @todos_router.get("/update/{todo_id}", response_model=TodoItem)
-def update_todo(todo_update: TodoItem, session: Annotated[Session, Depends(get_session)],) -> TodoItem:
+def update_todo(todo_update: TodoItem,session: Session = Depends(get_session),
+) -> TodoItem:
     todo = session.get(TodoItem, todo_update.id)
     if not todo:
         raise HTTPException(
@@ -105,7 +127,8 @@ def update_todo(todo_update: TodoItem, session: Annotated[Session, Depends(get_s
 
 
 @todos_router.delete("/delete/{todo_id}")
-def delete_todo(id: UUID, session: Annotated[Session, Depends(get_session)],) -> dict:
+def delete_todo(id: UUID,session: Session = Depends(get_session),
+) -> dict:
     todo = session.get(TodoItem, id)
     if not todo:
         raise HTTPException(status_code=404, detail="Todo not found")

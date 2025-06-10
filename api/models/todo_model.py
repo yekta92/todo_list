@@ -1,20 +1,15 @@
-import enum
 from typing import Optional, Annotated
 from datetime import datetime
-from uuid import UUID, uuid4
+from uuid import uuid4
 from sqlmodel import SQLModel, Field
-
-from sqlalchemy import Column, Integer, String, DateTime, Enum
-from sqlalchemy.sql import func
-
-from sqlalchemy.ext.declarative import declarative_base
+from pydantic import ConfigDict
 
 
-Base = declarative_base()
 
 class TodoItem(SQLModel, table=True):
-    id: str= Field(default_factory=uuid4, primary_key=True)
-    # id: UUID = Field(default_factory=uuid4, primary_key=True)
+    __table_args__ = {"extend_existing": True}
+
+    id: str = Field(default_factory=uuid4, primary_key=True)
     title: str = Field(..., description="Title of the Todo item")
     description: Optional[str] = Field(
         None, description="Optional description of the Todo item"
@@ -25,22 +20,6 @@ class TodoItem(SQLModel, table=True):
         default="pending",
         description="Status of the Todo item, can be 'pending', 'in_progress', or 'completed'",
     )
-    class Config:
-        orm_mode = True 
+    model_config = ConfigDict(from_attributes=True)
+ 
 
-
-
-class StatusEnum(str, enum.Enum):
-    pending = "pending"
-    in_progress = "in-progress"
-    completed = "completed"
-
-# class TodoModel(Base):
-#     __tablename__ = "todos"
-
-#     id = Column(Integer, primary_key=True, index=True)
-#     title = Column(String, index=True, nullable=False)
-#     description = Column(String, nullable=True)
-#     status = Column(Enum(StatusEnum), default=StatusEnum.pending, nullable=False)
-#     created_at = Column(DateTime(timezone=True), server_default=func.now())
-#     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

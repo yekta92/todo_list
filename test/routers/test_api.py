@@ -1,12 +1,55 @@
+import pytest
 from uuid import UUID
 import datetime
-from test.models.test_model import TodoItem
 from fastapi.testclient import TestClient
+from sqlalchemy import Engine, create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlmodel import SQLModel, Session, create_engine, select
+
 from main import app  
+from api.models.todo_model import TodoItem
+from test.models.test_model import TodoItem
 
 client = TestClient(app)
 
 sample_id = UUID(int=0x12345678123456781234567812345678)
+
+
+
+SQLALCHEMY_DATABASE_URL = "sqlite:///./todos.db"
+
+engine = create_engine(
+    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
+)
+TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+
+@pytest.fixture
+def test_engine():
+    engine = create_engine("sqlite:///:memory:", echo=True)
+    SQLModel.metadata.create_all(engine)
+    return engine
+
+@pytest.fixture
+def session(test_engine: Engine):
+    with Session(test_engine) as session:
+        yield session
+
+def test_create_and_read_todo(session: Session):
+    # Create a new Todo
+    todo = TodoItem(title="Write tests", completed=False)
+    session.add(todo)
+    session.commit()
+    session.refresh(todo)
+
+    # Query the Todo
+    statement = select(TodoItem).where(TodoItem.id == todo.id)
+    result = session.exec(statement).first()
+
+    assert result is not None
+    assert result.title == "Write tests"
+    assert result.completed is False
+
 
 
 def test_create_todos():
@@ -16,7 +59,12 @@ def test_create_todos():
     assert response.description == "Test description"
     assert response.status == 'pending'
     assert type(response.created_at) is datetime.datetime
+    assert response.status_code == 200
+    data = response.json()
+    assert data["title"] == "Test Todo"
+    assert data["status"] == "pending"
     print("create_todos passed")
+
 
 
 def test_get_todos():
@@ -27,6 +75,7 @@ def test_get_todos():
     assert all(len(todo.title) > 0 for todo in response)
     assert all(hasattr(todo, "title") for todo in response)
     assert all(isinstance(todo.title, str) for todo in response)
+    assert response.status_code == 200
 
 
 def test_get_todo():
@@ -55,68 +104,9 @@ def test_delete_todo():
 
     assert response == {"message": "Todo item deleted successfully"}
 
+def test_get_todo_stats(client):
+    response = client.get("/todos/stats")
+    assert response.status_code == 200
+    stats = response.json()
+    assert isinstance(stats, dict)
 
-
-
-import pytest
-from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from ...utils.database import Base, get_db
-from main import app
-from api.models import todo_model
-
-SQLALCHEMY_DATABASE_URL = "sqlite:///./test_todos.db"
-
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
-)
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-@pytest.fixture(scope="module")
-def test_db():
-    Base.metadata.create_all(bind=engine)
-    db = TestingSessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-    Base.metadata.drop_all(bind=engine)
-
-@pytest.fixture(scope="module")
-def client(test_db):
-    def override_get_db():
-        try:
-            yield test_db
-        finally:
-            pass
-    app.dependency_overrides[get_db] = override_get_db
-    with TestClient(app) as c:
-        yield c
-
-# def test_create_todo(client):
-#     response = client.post("/todos/", json={"title": "Test Todo", "description": "Test description"})
-#     assert response.status_code == 200
-#     data = response.json()
-#     assert data["title"] == "Test Todo"
-#     assert data["status"] == "pending"
-
-# def test_get_todos(client):
-#     response = client.get("/todos/")
-#     assert response.status_code == 200
-#     assert isinstance(response.json(), list)
-
-# def test_update_todo_partial(client):
-#     # Create first
-#     response = client.post("/todos/", json={"title": "Update Test"})
-#     todo_id = response.json()["id"]
-#     # Partial update
-#     response = client.patch(f"/todos/{todo_id}", json={"status": "completed"})
-#     assert response.status_code == 200
-#     assert response.json()["status"] == "completed"
-
-# def test_get_todo_stats(client):
-#     response = client.get("/todos/stats")
-#     assert response.status_code == 200
-#     stats = response.json()
-#     assert isinstance(stats, dict)
