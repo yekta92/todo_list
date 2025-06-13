@@ -1,7 +1,7 @@
 # app/routers.py
 import datetime
 from typing import List
-from uuid import UUID
+import uuid 
 from uuid import uuid4
 from fastapi import HTTPException, status, APIRouter, Depends 
 from api.models.todo_model import TodoItem
@@ -12,78 +12,47 @@ from ..utils.database import get_session
 todos_router = APIRouter()
 
 
-todos = TodoItem(
-    id=UUID(int=0x12345678123456781234567812345678),
-    title="Title of the Todo item",
-    description="Optional description of the Todo item",
-    status="pending",
-    created_at=datetime.datetime.now(),
-    updated_at = datetime.datetime.now(),
 
-)
-
-
-
-@todos_router.post("/todos/create", response_model=TodoItem, status_code=status.HTTP_201_CREATED)
-def create_todo(
-    todoitem: TodoItem,
-    session: Session = Depends(get_session),
-):
-    # Validation
-    if not todoitem.title or not todoitem.title.strip():
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Title must be provided and non-empty",
-        )
-
-    if not isinstance(todoitem.completed, bool):
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Completed must be a boolean",
-        )
-
-    todoitem.created_at = datetime.datetime.utcnow()
-    if not todoitem.id:
-        todoitem.id = uuid4()
-
-    session.add(todoitem)
-    session.commit()
-    session.refresh(todoitem)
-    return todoitem
-
-
-
-
-@todos_router.post("/create", response_model=None)
+@todos_router.post("/create", response_model=TodoItem)
 def create_todo(
     todoitem: TodoItem, 
     session: Session = Depends(get_session),
-):
-    if not todoitem.title or not todoitem.title.strip():
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Title must be provided and non-empty",
+) -> TodoItem:
+    
+    try:
+        if not todoitem.title or not todoitem.title.strip():
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Title must be provided and non-empty",
+            )
+
+        if not isinstance(todoitem.completed, bool):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Completed must be a boolean",
+            )
+
+        todo = TodoItem(
+            id=str(uuid4()),
+            title=todoitem.title,
+            description=todoitem.description,
+            completed=todoitem.completed,
+            created_at=datetime.datetime.utcnow(),
+            status=todoitem.status or "pending",
         )
 
-    if not isinstance(todoitem.completed, bool):
+        session.add(todo)
+        session.commit()
+        session.refresh(todo)
+        return todo
+
+    except Exception as e:
+        session.rollback()  # Rollback in case of error
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Completed must be a boolean",
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An error occurred while creating the todo item: {str(e)}"
         )
 
-    todo = TodoItem(
-        id=todoitem.id,
-        title=todoitem.title,
-        description=todoitem.description,
-        completed=todoitem.completed,
-        created_at=datetime.datetime.utcnow(),
-        status=todoitem.status or "active",
-    )
-
-    session.add(todo)
-    session.commit()
-    session.refresh(todo)
-    return todo
 
 
 @todos_router.get("/get_todos", response_model=List[TodoItem])
@@ -127,7 +96,7 @@ def update_todo(todo_update: TodoItem,session: Session = Depends(get_session),
 
 
 @todos_router.delete("/delete/{todo_id}")
-def delete_todo(id: UUID,session: Session = Depends(get_session),
+def delete_todo(id: str,session: Session = Depends(get_session),
 ) -> dict:
     todo = session.get(TodoItem, id)
     if not todo:

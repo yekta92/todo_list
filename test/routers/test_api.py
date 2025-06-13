@@ -1,5 +1,6 @@
 import pytest
 from uuid import UUID
+from uuid import uuid4
 import datetime
 from fastapi.testclient import TestClient
 from sqlalchemy import Engine, create_engine
@@ -12,7 +13,8 @@ from test.models.test_model import TodoItem
 
 client = TestClient(app)
 
-sample_id = UUID(int=0x12345678123456781234567812345678)
+
+sample_id = str(uuid4())
 
 
 
